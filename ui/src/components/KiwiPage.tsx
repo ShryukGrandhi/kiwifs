@@ -30,6 +30,8 @@ import { KiwiTabs } from "./KiwiTabs";
 import { KiwiColumns } from "./KiwiColumns";
 import { KiwiClaim } from "./KiwiClaim";
 import { KiwiQuiz, KiwiQuizProvider, KiwiQuizScore } from "./KiwiQuiz";
+import { WikiLinkPreview } from "./WikiLinkPreview";
+import { invalidatePagePreview } from "@kw/lib/pagePreview";
 import { ExcalidrawMarkdownPreview, isExcalidrawMarkdown } from "./ExcalidrawMarkdownPreview";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useUIConfigStore } from "@kw/lib/uiConfigStore";
@@ -573,6 +575,10 @@ export function KiwiPage({ path = "", content: contentProp, tree, onNavigate, on
   }, [path, refreshKey, isDir, isHeadless]);
 
   useEffect(() => {
+    invalidatePagePreview();
+  }, [refreshKey]);
+
+  useEffect(() => {
     if (isHeadless || !path) return;
     let cancelled = false;
     setBookOrder(null);
@@ -975,46 +981,52 @@ export function KiwiPage({ path = "", content: contentProp, tree, onNavigate, on
                         const pagePath = hashIdx >= 0 ? raw.slice(0, hashIdx) : raw;
                         const anchor = hashIdx >= 0 ? raw.slice(hashIdx) : "";
                         return (
-                          <a
-                            href={`/page/${pagePath}${anchor}`}
-                            onClick={(e) => {
-                              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                              e.preventDefault();
-                              if (onWikiLinkClick) onWikiLinkClick(pagePath);
-                              else nav(pagePath);
-                              if (anchor) {
-                                requestAnimationFrame(() => {
-                                  setTimeout(() => {
-                                    const el = document.getElementById(anchor.slice(1));
-                                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                                  }, 100);
-                                });
-                              }
-                            }}
-                            {...(rest as any)}
-                            className="wiki-link"
-                          >
-                            {children}
-                          </a>
+                          <WikiLinkPreview path={pagePath}>
+                            <a
+                              href={`/page/${pagePath}${anchor}`}
+                              onClick={(e) => {
+                                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                                e.preventDefault();
+                                if (onWikiLinkClick) onWikiLinkClick(pagePath);
+                                else nav(pagePath);
+                                if (anchor) {
+                                  requestAnimationFrame(() => {
+                                    setTimeout(() => {
+                                      const el = document.getElementById(anchor.slice(1));
+                                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                    }, 100);
+                                  });
+                                }
+                              }}
+                              {...(rest as any)}
+                              // The hover card stands in for the native title tooltip.
+                              title={undefined}
+                              className="wiki-link"
+                            >
+                              {children}
+                            </a>
+                          </WikiLinkPreview>
                         );
                       }
                       if (h.startsWith("#kiwi-missing:")) {
                         const target = h.slice("#kiwi-missing:".length);
                         return (
-                          <a
-                            href={`/page/${target}.md`}
-                            onClick={(e) => {
-                              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                              e.preventDefault();
-                              if (onWikiLinkClick) onWikiLinkClick(target);
-                              else nav(`${target}.md`);
-                            }}
-                            {...(rest as any)}
-                            title={`Missing: ${target} — click to create`}
-                            className="wiki-link-missing"
-                          >
-                            {children}
-                          </a>
+                          <WikiLinkPreview path={`${target}.md`} missing>
+                            <a
+                              href={`/page/${target}.md`}
+                              onClick={(e) => {
+                                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                                e.preventDefault();
+                                if (onWikiLinkClick) onWikiLinkClick(target);
+                                else nav(`${target}.md`);
+                              }}
+                              {...(rest as any)}
+                              title={undefined}
+                              className="wiki-link-missing"
+                            >
+                              {children}
+                            </a>
+                          </WikiLinkPreview>
                         );
                       }
                       if (h.startsWith("#")) {
