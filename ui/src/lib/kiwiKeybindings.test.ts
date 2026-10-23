@@ -4,6 +4,7 @@ import {
   buildChordIndex,
   eventMatchesChord,
   formatChordDisplay,
+  isBareHelpKey,
   matchBoundAction,
   mergeKeybindings,
   normalizeChord,
@@ -99,5 +100,26 @@ describe("buildChordIndex", () => {
 describe("formatChordDisplay", () => {
   it("formats mod shortcuts for display", () => {
     expect(formatChordDisplay("mod+k")).toMatch(/K/i);
+  });
+});
+
+describe("isBareHelpKey", () => {
+  const ev = (target: unknown, extra: Partial<KeyboardEvent> = {}) =>
+    ({ key: "?", shiftKey: true, ctrlKey: false, metaKey: false, altKey: false, target, ...extra }) as unknown as KeyboardEvent;
+
+  it("matches ? outside editable elements", () => {
+    expect(isBareHelpKey(ev({ tagName: "BODY", isContentEditable: false }))).toBe(true);
+    expect(isBareHelpKey(ev(null))).toBe(true);
+  });
+
+  it("ignores ? while typing", () => {
+    expect(isBareHelpKey(ev({ tagName: "INPUT", isContentEditable: false }))).toBe(false);
+    expect(isBareHelpKey(ev({ tagName: "TEXTAREA", isContentEditable: false }))).toBe(false);
+    expect(isBareHelpKey(ev({ tagName: "DIV", isContentEditable: true }))).toBe(false);
+  });
+
+  it("ignores modified keys", () => {
+    expect(isBareHelpKey(ev(null, { ctrlKey: true }))).toBe(false);
+    expect(isBareHelpKey(ev(null, { key: "/" }))).toBe(false);
   });
 });

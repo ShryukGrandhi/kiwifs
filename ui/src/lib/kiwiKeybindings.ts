@@ -176,7 +176,7 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
       { action: "new_page", label: "New page" },
       { action: "toggle_editor", label: "Toggle editor" },
       { action: "toggle_sidebar", label: "Toggle sidebar" },
-      { action: "shortcuts_help", label: "Keyboard shortcuts" },
+      { action: "shortcuts_help", label: "Keyboard shortcuts (also ?)" },
     ],
   },
   {
@@ -218,4 +218,13 @@ export function matchBoundAction(
     if (eventMatchesChord(e, chord)) return action;
   }
   return null;
+}
+
+/** Bare `?` opens the shortcut sheet, but only when the user isn't typing. */
+export function isBareHelpKey(e: KeyboardEvent): boolean {
+  if (e.key !== "?" || e.metaKey || e.ctrlKey || e.altKey) return false;
+  const el = e.target as HTMLElement | null;
+  if (!el || typeof el.tagName !== "string") return true;
+  const tag = el.tagName.toLowerCase();
+  return tag !== "input" && tag !== "textarea" && tag !== "select" && !el.isContentEditable;
 }
