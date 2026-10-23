@@ -6,6 +6,14 @@ import {
   DialogTitle,
 } from "@kw/components/ui/dialog";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@kw/components/ui/command";
+import {
   formatChordDisplay,
   SHORTCUT_SECTIONS,
   type KeybindingAction,
@@ -34,28 +42,31 @@ export function KeyboardShortcuts({ open, onOpenChange, bindings, conflicts = []
             {conflicts.map((c) => `${c.actions.join(" / ")} (${formatChordDisplay(c.chord)})`).join("; ")}
           </div>
         )}
-        <div className="space-y-4">
-          {SHORTCUT_SECTIONS.map((s) => (
-            <div key={s.section}>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                {s.section}
-              </div>
-              <div className="space-y-1.5">
-                {s.items.map((item) => (
-                  <div
-                    key={item.action}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span>{item.label}</span>
-                    <kbd className="px-2 py-0.5 rounded border border-border bg-muted font-mono text-xs text-muted-foreground">
-                      {formatChordDisplay(bindings[item.action])}
-                    </kbd>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <Command className="bg-transparent">
+          <CommandInput placeholder="Filter shortcuts..." />
+          <CommandList>
+            <CommandEmpty>No matching shortcuts.</CommandEmpty>
+            {SHORTCUT_SECTIONS.map((s) => (
+              <CommandGroup key={s.section} heading={s.section}>
+                {s.items.map((item) => {
+                  const chord = formatChordDisplay(bindings[item.action]);
+                  return (
+                    <CommandItem
+                      key={item.action}
+                      value={`${s.section} ${item.label} ${chord}`}
+                      className="items-center justify-between"
+                    >
+                      <span>{item.label}</span>
+                      <kbd className="px-2 py-0.5 rounded border border-border bg-muted font-mono text-xs text-muted-foreground">
+                        {chord}
+                      </kbd>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </Command>
       </DialogContent>
     </Dialog>
   );
